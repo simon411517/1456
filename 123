@@ -1,0 +1,148 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="UTF-8">
+  <title>會考預估排名系統</title>
+  <style>
+    body {
+      background-color: #f8f4ef;
+      font-family: "Helvetica Neue", Arial, sans-serif;
+      color: #3e2f28;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 20px;
+      box-sizing: border-box;
+    }
+    h1 {
+      margin-bottom: 20px;
+    }
+    .form-group {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      width: 300px;
+      margin-bottom: 20px;
+    }
+    input, button {
+      padding: 10px;
+      font-size: 16px;
+      border-radius: 8px;
+      border: 1px solid #d6c8ba;
+      background-color: #fff;
+      box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+      box-sizing: border-box;
+    }
+    button {
+      background-color: #d8b4a0;
+      color: #fff;
+      font-weight: bold;
+      cursor: pointer;
+      transition: background-color 0.3s;
+    }
+    button:hover {
+      background-color: #b5917c;
+    }
+    .card {
+      background-color: #fff;
+      padding: 20px;
+      border-radius: 12px;
+      box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+      margin-top: 20px;
+      width: 300px;
+      text-align: center;
+    }
+  </style>
+</head>
+<body>
+  <h1>會考預估排名系統</h1>
+  <div class="form-group">
+    <input id="chinese" placeholder="國文 (A++, A+, A, B++, ...)" />
+    <input id="math" placeholder="數學 (A++, A+, A, B++, ...)" />
+    <input id="english" placeholder="英文 (A++, A+, A, B++, ...)" />
+    <input id="science" placeholder="理化 (A++, A+, A, B++, ...)" />
+    <input id="social" placeholder="社會 (A++, A+, A, B++, ...)" />
+    <button onclick="calculate()">計算排名</button>
+  </div>
+  <div id="result" class="card" style="display:none;"></div>
+
+  <script>
+    // 各組別人數
+    const data = [
+      { key: "5A0B0C", count: 17569 },
+      { key: "4A1B0C", count: 10355 },
+      { key: "4A0B1C", count: 31 },
+      { key: "3A2B0C", count: 10313 },
+      { key: "3A1B1C", count: 90 },
+      { key: "3A0B2C", count: 0 },
+      { key: "2A3B0C", count: 13281 },
+      { key: "2A2B1C", count: 338 },
+      { key: "2A1B2C", count: 17 },
+      { key: "2A0B3C", count: 0 },
+      { key: "1A4B0C", count: 20787 },
+      { key: "1A3B1C", count: 2008 },
+      { key: "1A2B2C", count: 277 },
+      { key: "1A1B3C", count: 62 },
+      { key: "1A0B4C", count: 43 }
+    ];
+
+    const total = data.reduce((sum, item) => sum + item.count, 0);
+
+    // 累計範圍計算
+    let cumulative = 0;
+    const rangeData = data.map(item => {
+      const start = cumulative / total * 100;
+      cumulative += item.count;
+      const end = cumulative / total * 100;
+      return { key: item.key, start: start.toFixed(2), end: end.toFixed(2) };
+    });
+
+    function normalizeGrade(grade) {
+      if (!grade) return "";
+      return grade.replace("+", "").replace("+", "").toUpperCase();
+    }
+
+    function calculate() {
+      const chinese = normalizeGrade(document.getElementById('chinese').value);
+      const math = normalizeGrade(document.getElementById('math').value);
+      const english = normalizeGrade(document.getElementById('english').value);
+      const science = normalizeGrade(document.getElementById('science').value);
+      const social = normalizeGrade(document.getElementById('social').value);
+
+      if (!chinese || !math || !english || !science || !social) {
+        alert("請完整輸入所有科目的成績！");
+        return;
+      }
+
+      const grades = [chinese, math, english, science, social];
+      const countA = grades.filter(g => g === "A").length;
+      const countB = grades.filter(g => g === "B").length;
+      const countC = grades.filter(g => g === "C").length;
+
+      const key = `${countA}A${countB}B${countC}C`;
+
+      const range = rangeData.find(item => item.key === key);
+
+      const resultDiv = document.getElementById('result');
+      if (range) {
+        resultDiv.innerHTML = `
+          <h2>成績組合：${key}</h2>
+          <p>預估排名範圍：</p>
+          <h3>前 ${range.start}% ~ ${range.end}%</h3>
+          ${parseFloat(range.end) <= 10 ? "<p>💡 表現超優異！</p>" : ""}
+        `;
+      } else {
+        resultDiv.innerHTML = `<p>找不到符合的成績組合，可能是無人達成此組合。</p>`;
+      }
+      resultDiv.style.display = 'block';
+
+      // 清空輸入
+      document.getElementById('chinese').value = '';
+      document.getElementById('math').value = '';
+      document.getElementById('english').value = '';
+      document.getElementById('science').value = '';
+      document.getElementById('social').value = '';
+    }
+  </script>
+</body>
+</html>
